@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Credential Vault</title>
+  <link rel="stylesheet" href="viewFile.css">
+</head>
+
+<body>
+  <!-- Authentication check script - MUST be first -->
+  <script src="auth-check.js"></script>
+
+  <div class="container fade-in">
+    <div class="header" style="position: relative;">
+      <h1>🔐 Credential Vault</h1>
+      <p>Secure access to your infrastructure credentials</p>
+    </div>
+
+    <div class="folder-grid">
+      <div class="folder-item" data-folder="Server">
+        <span class="folder-icon">🖥️</span>
+        Server Credentials
+      </div>
+      <div class="folder-item" data-folder="Firewall">
+        <span class="folder-icon">🛡️</span>
+        Firewall Access
+      </div>
+      <div class="folder-item" data-folder="Switch">
+        <span class="folder-icon">🔗</span>
+        Network Switch
+      </div>
+      <div class="folder-item" data-folder="EndpointDevice">
+        <span class="folder-icon">📱</span>
+        Endpoint Devices
+      </div>
+    </div>
+
+    <div id="credentialsList"></div>
+  </div>
+
+  <button id="addCredentialBtn" class="floating-btn">➕</button>
+
+  <!-- Add Credential Modal -->
+  <div id="credentialModal" class="modal hidden">
+    <div class="modal-content">
+      <h2>Add New Data to Database</h2>
+      <form id="credentialForm">
+        <!-- Step 1: Choose Folder -->
+        <label>Select Category:</label>
+        <select id="folderSelect" required>
+          <option value="">-- Select Folder --</option>
+          <option value="Server">Server</option>
+          <option value="Firewall">Firewall</option>
+          <option value="Switch">Switch</option>
+          <option value="EndpointDevice">EndpointDevice</option>
+        </select>
+
+        <!-- Step 2: Choose or Create Document -->
+        <label>Select Document (or type new):</label>
+        <select id="docSelect">
+          <option value="">-- Create New Document --</option>
+        </select>
+        <input type="text" id="newDocId" placeholder="New Document ID (if not selected)" />
+
+        <!-- Step 3: Key-Value -->
+        <label>Field Key:</label>
+        <input type="text" id="credKey" required />
+
+        <label>Field Value:</label>
+        <input type="text" id="credValue" required />
+
+        <button type="submit" class="btn">➕ Add Field</button>
+        <button type="button" id="closeModalBtn" class="btn cancel">Cancel</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 1. Firebase Core -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <!-- 2. Firestore -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <!-- 3. Auth (if using) -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <!-- 4. Your config -->
+  <script src="firebase-config.js"></script>
+  <!-- 5. Your app scripts -->
+  <script src="viewFile.js"></script>
+</body>
+
+</html>

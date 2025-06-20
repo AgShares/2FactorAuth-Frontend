@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Diagnostic Tool</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .diagnostic-container {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .test-item {
+            margin: 15px 0;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #ddd;
+        }
+        .test-item.success {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+        .test-item.error {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+        .test-item.warning {
+            background: #fff3cd;
+            border-color: #ffc107;
+            color: #856404;
+        }
+        .test-item.info {
+            background: #d1ecf1;
+            border-color: #17a2b8;
+            color: #0c5460;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .config-display {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .step-header {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 20px 0 10px 0;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="diagnostic-container">
+        <h1>🔧 Firebase Diagnostic Tool</h1>
+        <p>This tool will help diagnose Firebase connection issues. Run each test in order.</p>
+        
+        <div class="step-header">Step 1: Basic Checks</div>
+        <button onclick="runBasicChecks()">Run Basic Checks</button>
+        <div id="basicResults"></div>
+
+        <div class="step-header">Step 2: Firebase Initialization</div>
+        <button onclick="testFirebaseInit()">Test Firebase Initialization</button>
+        <div id="initResults"></div>
+
+        <div class="step-header">Step 3: Database Connection</div>
+        <button onclick="testDatabaseConnection()">Test Database Connection</button>
+        <div id="dbResults"></div>
+
+        <div class="step-header">Step 4: Collection Access</div>
+        <button onclick="testCollectionAccess()">Test Collection Access</button>
+        <div id="collectionResults"></div>
+
+        <div class="step-header">Step 5: Write Test</div>
+        <button onclick="testWriteOperation()">Test Write Operation</button>
+        <div id="writeResults"></div>
+
+        <div class="step-header">Configuration Display</div>
+        <button onclick="displayConfig()">Show Configuration</button>
+        <div id="configDisplay"></div>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+    
+    <!-- Your Firebase Config -->
+    <script src="firebase-config.js"></script>
+
+    <script>
+        let db;
+
+        function addResult(containerId, message, type = 'info') {
+            const container = document.getElementById(containerId);
+            const div = document.createElement('div');
+            div.className = `test-item ${type}`;
+            div.innerHTML = message;
+            container.appendChild(div);
+        }
+
+        function clearResults(containerId) {
+            document.getElementById(containerId).innerHTML = '';
+        }
+
+        function runBasicChecks() {
+            clearResults('basicResults');
+            
+            // Check if Firebase is loaded
+            if (typeof firebase !== 'undefined') {
+                addResult('basicResults', '✅ Firebase SDK loaded successfully', 'success');
+            } else {
+                addResult('basicResults', '❌ Firebase SDK not loaded. Check if Firebase scripts are included correctly.', 'error');
+                return;
+            }
+
+            // Check if config exists
+            if (typeof window.firebaseConfig !== 'undefined') {
+                addResult('basicResults', '✅ Firebase config found', 'success');
+                
+                // Validate config structure
+                const config = window.firebaseConfig;
+                const requiredFields = ['apiKey', 'authDomain', 'projectId'];
+                let configValid = true;
+                
+                requiredFields.forEach(field => {
+                    if (!config[field]) {
+                        addResult('basicResults', `❌ Missing required config field: ${field}`, 'error');
+                        configValid = false;
+                    }
+                });
+                
+                if (configValid) {
+                    addResult('basicResults', '✅ Config structure looks valid', 'success');
+                }
+            } else {
+                addResult('basicResults', '❌ Firebase config not found. Check firebase-config.js file.', 'error');
+            }
+
+            // Check Firestore availability
+            if (firebase.firestore) {
+                addResult('basicResults', '✅ Firestore SDK available', 'success');
+            } else {
+                addResult('basicResults', '❌ Firestore SDK not loaded', 'error');
+            }
+        }
+
+        function testFirebaseInit() {
+            clearResults('initResults');
+            
+            try {
+                if (!window.firebaseConfig) {
+                    addResult('initResults', '❌ Config not available for initialization', 'error');
+                    return;
+                }
+
+                // Initialize Firebase
+                firebase.initializeApp(window.firebaseConfig);
+                addResult('initResults', '✅ Firebase initialized successfully', 'success');
+                
+                // Initialize Firestore
+                db = firebase.firestore();
+                addResult('initResults', '✅ Firestore initialized successfully', 'success');
+                
+            } catch (error) {
+                addResult('initResults', `❌ Initialization failed: ${error.message}`, 'error');
+                console.error('Initialization error:', error);
+                
+                if (error.code === 'app/duplicate-app') {
+                    addResult('initResults', '⚠️ App already initialized (this is usually okay)', 'warning');
+                    db = firebase.firestore();
+                }
+            }
+        }
+
+        async function testDatabaseConnection() {
+            clearResults('dbResults');
+            
+            if (!db) {
+                addResult('dbResults', '❌ Firestore not initialized. Run Step 2 first.', 'error');
+                return;
+            }
+
+            try {
+                // Simple connectivity test
+                const testRef = db.collection('_test_connection_');
+                await testRef.limit(1).get();
+                addResult('dbResults', '✅ Database connection successful', 'success');
+                
+            } catch (error) {
+                addResult('dbResults', `❌ Database connection failed: ${error.message}`, 'error');
+                
+                if (error.code === 'permission-denied') {
+                    addResult('dbResults', '⚠️ Permission denied - check Firestore security rules', 'warning');
+                } else if (error.code === 'unavailable') {
+                    addResult('dbResults', '⚠️ Service unavailable - check internet connection', 'warning');
+                }
+                
+                console.error('Database connection error:', error);
+            }
+        }
+
+        async function testCollectionAccess() {
+            clearResults('collectionResults');
+            
+            if (!db) {
+                addResult('collectionResults', '❌ Firestore not initialized. Run Step 2 first.', 'error');
+                return;
+            }
+
+            try {
+                // Test credentials collection access
+                const credentialsRef = db.collection('credentials');
+                const snapshot = await credentialsRef.limit(1).get();
+                
+                addResult('collectionResults', '✅ Can access credentials collection', 'success');
+                addResult('collectionResults', `📊 Found ${snapshot.size} top-level documents`, 'info');
+
+                // Test specific folder access
+                const folders = ['Server', 'Firewall', 'Switch', 'EndpointDevice'];
+                
+                for (const folder of folders) {
+                    try {
+                        const folderRef = db.collection('credentials').doc(folder).collection('data');
+                        const folderSnapshot = await folderRef.limit(1).get();
+                        addResult('collectionResults', `✅ ${folder}: ${folderSnapshot.size} documents`, 'success');
+                    } catch (error) {
+                        addResult('collectionResults', `❌ ${folder}: ${error.message}`, 'error');
+                    }
+                }
+                
+            } catch (error) {
+                addResult('collectionResults', `❌ Collection access failed: ${error.message}`, 'error');
+                console.error('Collection access error:', error);
+            }
+        }
+
+        async function testWriteOperation() {
+            clearResults('writeResults');
+            
+            if (!db) {
+                addResult('writeResults', '❌ Firestore not initialized. Run Step 2 first.', 'error');
+                return;
+            }
+
+            try {
+                const testDocRef = db.collection('credentials').doc('_test_').collection('data').doc('test_write');
+                const testData = {
+                    test_key: 'test_value',
+                    timestamp: new Date().toISOString(),
+                    diagnostic: true
+                };
+
+                await testDocRef.set(testData);
+                addResult('writeResults', '✅ Write operation successful', 'success');
+                
+                // Try to read it back
+                const readDoc = await testDocRef.get();
+                if (readDoc.exists) {
+                    addResult('writeResults', '✅ Read-after-write successful', 'success');
+                    
+                    // Clean up test document
+                    await testDocRef.delete();
+                    addResult('writeResults', '✅ Test document cleaned up', 'success');
+                } else {
+                    addResult('writeResults', '⚠️ Could not read back test document', 'warning');
+                }
+                
+            } catch (error) {
+                addResult('writeResults', `❌ Write operation failed: ${error.message}`, 'error');
+                
+                if (error.code === 'permission-denied') {
+                    addResult('writeResults', '⚠️ Write permission denied - check Firestore security rules', 'warning');
+                }
+                
+                console.error('Write operation error:', error);
+            }
+        }
+
+        function displayConfig() {
+            const container = document.getElementById('configDisplay');
+            
+            if (window.firebaseConfig) {
+                const configHtml = `
+                    <div class="config-display">
+Firebase Configuration:
+${JSON.stringify(window.firebaseConfig, null, 2)}
+
+Project ID: ${window.firebaseConfig.projectId || 'Not set'}
+Auth Domain: ${window.firebaseConfig.authDomain || 'Not set'}
+API Key: ${window.firebaseConfig.apiKey ? window.firebaseConfig.apiKey.substring(0, 10) + '...' : 'Not set'}
+                    </div>
+                `;
+                container.innerHTML = configHtml;
+            } else {
+                container.innerHTML = '<div class="test-item error">❌ No Firebase configuration found</div>';
+            }
+        }
+    </script>
+</body>
+</html>

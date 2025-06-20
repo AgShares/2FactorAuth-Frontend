@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Secure Login Portal</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="login-container fade-in">
+        <div class="header">
+            <h2>🔐 Secure Login</h2>
+            <p>Access your protected dashboard</p>
+        </div>
+
+        <div class="form-section">
+            <form id="loginForm">
+                <div class="input-group">
+                    <input type="email" id="email" placeholder="Enter your email address" required autocomplete="username" />
+                </div>
+                <div class="input-group">
+                    <input type="password" id="password" placeholder="Enter your password" required autocomplete="current-password" />
+                </div>
+                <button type="submit" class="btn">Sign In</button>
+            </form>
+        </div>
+
+        <div id="otpSection">
+            <div class="divider">
+                <span>Two-Factor Authentication</span>
+            </div>
+            <div class="section-title">Verify Your Identity</div>
+            
+            <div class="input-group">
+                <input type="text" id="phone" placeholder="Enter phone number" required />
+            </div>
+            <button id="sendOtpBtn" class="btn">Send OTP Code</button>
+            
+            <div class="input-group">
+                <input type="text" id="otpInput" placeholder="Enter 6-digit OTP code" required maxlength="6" />
+            </div>
+            <button id="verifyOtpBtn" class="btn">Verify & Continue</button>
+        </div>
+
+        <div id="message" class="message"></div>
+    </div>
+
+    <!-- Firebase UMD-compatible SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+    
+    <!-- Load Firebase config first -->
+    <script src="firebase-config.js"></script>
+    
+    <!-- Include your updated Firebase auth script -->
+    <script src="firebase-auth.js"></script>
+</body>
+
+</html>
