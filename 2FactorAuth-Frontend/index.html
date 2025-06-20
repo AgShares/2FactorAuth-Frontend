@@ -47,16 +47,14 @@
         <div id="message" class="message"></div>
     </div>
 
-    <!-- Firebase UMD-compatible SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-    
-    <!-- Load Firebase config first -->
-    <script src="firebase-config.js"></script>
-    
-    <!-- Include your updated Firebase auth script -->
-    <script src="firebase-auth.js"></script>
+<!-- Firebase UMD SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+
+<!-- Your config + logic (ORDER MATTERS!) -->
+<script src="firebase-config.js"></script>   <!-- Must come BEFORE -->
+<script src="firebase-auth.js"></script>     <!-- So it can use config -->
 </body>
 
 </html>
