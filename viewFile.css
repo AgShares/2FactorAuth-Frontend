@@ -190,6 +190,7 @@ th {
   text-transform: uppercase;
   letter-spacing: 0.5px;
   border-bottom: 2px solid #e5e7eb;
+  display: none;
 }
 
 td {
