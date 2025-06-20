@@ -252,7 +252,6 @@ async function handleFormSubmission(event) {
         // Check if document exists
         const docSnapshot = await docRef.get();
         
-        // Fixed: Use .exists as a property, not a method
         if (docSnapshot.exists) {
             // Update existing document
             await docRef.update({
@@ -400,6 +399,36 @@ document.addEventListener('DOMContentLoaded', () => {
     addLogoutButton();
 });
 
+let currentlyOpenDetail = null;
+
+function toggleCredentialDetails(docId) {
+    const detailRow = document.getElementById(`details-${docId}`);
+    
+    if (!detailRow) return;
+
+    // If clicking the already open row, close it
+    if (currentlyOpenDetail === docId) {
+        detailRow.classList.remove('active');
+        currentlyOpenDetail = null;
+        console.log(`❌ Closed details for credential: ${docId}`);
+        return;
+    }
+
+    // Close the previously open row, if any
+    if (currentlyOpenDetail) {
+        const previousDetailRow = document.getElementById(`details-${currentlyOpenDetail}`);
+        if (previousDetailRow) {
+            previousDetailRow.classList.remove('active');
+            console.log(`❌ Closed previous details for credential: ${currentlyOpenDetail}`);
+        }
+    }
+
+    // Open the clicked row
+    detailRow.classList.add('active');
+    currentlyOpenDetail = docId;
+    console.log(`✅ Opened details for credential: ${docId}`);
+}
+
 async function fetchCredentials(folder) {
     console.log(`📂 Fetching credentials for folder: ${folder}`);
     
@@ -425,7 +454,7 @@ async function fetchCredentials(folder) {
 
         let tableHTML = `<div class="credentials-table">
             <div class="table-header">${folder} Credentials</div>
-            <table><thead><tr><th>Credential ID</th><th>Details</th></tr></thead><tbody>`;
+            <table><thead><tr><th>Credential ID</th></tr></thead><tbody>`;
 
         snapshot.forEach(doc => {
             const data = doc.data();
@@ -436,12 +465,18 @@ async function fetchCredentials(folder) {
                         <span class="credential-value">${value}</span>
                     </div>
                     <div class="credential-actions">
-                        <button class="copy-btn" onclick="copyToClipboard('${value.toString().replace(/'/g, "\\'")}', this)">📋</button>
-                        <button class="edit-btn" onclick="changeCredential('${folder}', '${doc.id}', '${key}', '${value.toString().replace(/'/g, "\\'")}')">✏️</button>
+                        <button class="copy-btn" onclick="copyToClipboard('${value.toString().replace(/'/g, "\\'")}', this)">📋 COPY</button>
+                        <button class="edit-btn" onclick="changeCredential('${folder}', '${doc.id}', '${key}', '${value.toString().replace(/'/g, "\\'")}')">✏️ EDIT</button>
                     </div>
                 </div>`).join('');
 
-            tableHTML += `<tr><td><strong>${doc.id}</strong></td><td>${details}</td></tr>`;
+            tableHTML += `
+                <tr class="credential-row" onclick="toggleCredentialDetails('${doc.id}')">
+                    <td><strong>${doc.id}</strong></td>
+                </tr>
+                <tr class="credential-details" id="details-${doc.id}">
+                    <td colspan="1">${details}</td>
+                </tr>`;
         });
 
         tableHTML += `</tbody></table></div>`;
@@ -495,7 +530,11 @@ async function copyToClipboard(text, button) {
         await navigator.clipboard.writeText(text);
         const originalText = button.innerHTML;
         button.innerHTML = '✅';
-        setTimeout(() => button.innerHTML = originalText, 2000);
+        button.classList.add('copied');
+        setTimeout(() => {
+            button.innerHTML = originalText;
+            button.classList.remove('copied');
+        }, 2000);
     } catch (err) {
         const textArea = document.createElement('textarea');
         textArea.value = text;
@@ -506,7 +545,11 @@ async function copyToClipboard(text, button) {
         try {
             document.execCommand('copy');
             button.innerHTML = '✅';
-            setTimeout(() => button.innerHTML = '📋', 2000);
+            button.classList.add('copied');
+            setTimeout(() => {
+                button.innerHTML = '📋';
+                button.classList.remove('copied');
+            }, 2000);
         } catch (err) {
             button.innerHTML = '❌';
         }
