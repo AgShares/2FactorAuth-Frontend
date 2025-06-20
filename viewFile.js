@@ -1,23 +1,12 @@
 // Firebase config is loaded from secure config file
 console.log('🔧 Initializing Firebase...');
 console.log('🌐 Current environment:', window.location.hostname);
-console.log('🔗 Current URL:', window.location.href);
 
 if (typeof window.firebaseConfig === 'undefined') {
     console.error('❌ Firebase config not found!');
     alert('❌ Firebase configuration missing. Please check firebase-config.js');
 } else {
     console.log('✅ Firebase config loaded:', window.firebaseConfig);
-
-    // Debug: Check if config has all required fields
-    const requiredFields = ['apiKey', 'authDomain', 'projectId'];
-    requiredFields.forEach(field => {
-        if (!window.firebaseConfig[field]) {
-            console.error(`❌ Missing required Firebase config field: ${field}`);
-        } else {
-            console.log(`✅ Firebase config ${field}:`, window.firebaseConfig[field]);
-        }
-    });
 }
 
 let app, db, auth;
@@ -34,14 +23,6 @@ try {
     db = firebase.firestore();
     auth = firebase.auth();
     console.log('✅ Firestore and Auth initialized successfully');
-
-    // Enable network persistence for offline capability
-    db.enableNetwork().then(() => {
-        console.log('✅ Firestore network enabled');
-    }).catch(error => {
-        console.error('❌ Firestore network error:', error);
-    });
-
 } catch (error) {
     console.error('❌ Firestore/Auth initialization failed:', error);
     alert('❌ Firestore/Auth initialization failed: ' + error.message);
@@ -50,30 +31,26 @@ try {
 const credentialsList = document.getElementById("credentialsList");
 const folderButtons = document.querySelectorAll(".folder-item");
 
+// Modal elements
+const addCredentialBtn = document.getElementById("addCredentialBtn");
+const credentialModal = document.getElementById("credentialModal");
+const closeModalBtn = document.getElementById("closeModalBtn");
+const credentialForm = document.getElementById("credentialForm");
+const folderSelect = document.getElementById("folderSelect");
+const docSelect = document.getElementById("docSelect");
+const newDocIdInput = document.getElementById("newDocId");
+
 // Enhanced authentication state tracking
 let authStateResolved = false;
 let currentUser = null;
 
-// Firebase Auth state listener with enhanced debugging
+// Firebase Auth state listener
 auth.onAuthStateChanged((user) => {
     authStateResolved = true;
     currentUser = user;
-
+    
     if (user) {
         console.log('✅ User is signed in:', user.uid);
-        console.log('🔐 User auth details:', {
-            uid: user.uid,
-            isAnonymous: user.isAnonymous,
-            providerData: user.providerData
-        });
-
-        // Get ID token for debugging
-        user.getIdToken().then(token => {
-            console.log('🎫 Auth token obtained (length):', token.length);
-        }).catch(error => {
-            console.error('❌ Failed to get auth token:', error);
-        });
-
         enableAppFunctionality();
     } else {
         console.log('❌ User is not signed in');
@@ -84,14 +61,14 @@ auth.onAuthStateChanged((user) => {
 // Timeout fallback for auth state
 setTimeout(() => {
     if (!authStateResolved) {
-        console.error('⏰ Auth state resolution timeout - forcing authentication check');
+        console.error('⏰ Auth state resolution timeout');
         handleUnauthenticatedUser();
     }
-}, 10000); // 10 second timeout
+}, 10000);
 
 function enableAppFunctionality() {
     console.log('✅ App functionality enabled');
-
+    
     // Add event listeners to folder buttons
     document.querySelectorAll(".folder-item").forEach((btn, index) => {
         btn.style.animationDelay = `${index * 0.1}s`;
@@ -104,38 +81,230 @@ function enableAppFunctionality() {
         });
     });
 
+    // Enable modal functionality
+    setupModalFunctionality();
+    
     // Test database connection
     setTimeout(testDatabaseConnection, 2000);
 }
 
+function setupModalFunctionality() {
+    console.log('⚙️ Setting up modal functionality...');
+    
+    // Add credential button click
+    if (addCredentialBtn) {
+        addCredentialBtn.addEventListener('click', () => {
+            console.log('➕ Add credential button clicked');
+            openModal();
+        });
+    } else {
+        console.error('❌ Add credential button not found');
+    }
+
+    // Close modal button
+    if (closeModalBtn) {
+        closeModalBtn.addEventListener('click', () => {
+            console.log('❌ Close modal button clicked');
+            closeModal();
+        });
+    }
+
+    // Click outside modal to close
+    if (credentialModal) {
+        credentialModal.addEventListener('click', (e) => {
+            if (e.target === credentialModal) {
+                closeModal();
+            }
+        });
+    }
+
+    // Folder select change event
+    if (folderSelect) {
+        folderSelect.addEventListener('change', async () => {
+            const selectedFolder = folderSelect.value;
+            console.log('📂 Folder selected:', selectedFolder);
+            
+            if (selectedFolder) {
+                await loadExistingDocuments(selectedFolder);
+            } else {
+                clearDocumentSelect();
+            }
+        });
+    }
+
+    // Form submission
+    if (credentialForm) {
+        credentialForm.addEventListener('submit', handleFormSubmission);
+    }
+
+    console.log('✅ Modal functionality setup complete');
+}
+
+function openModal() {
+    if (!auth.currentUser) {
+        alert('❌ Please wait for authentication to complete');
+        return;
+    }
+    
+    console.log('📝 Opening add credential modal');
+    
+    // Reset form
+    if (credentialForm) {
+        credentialForm.reset();
+    }
+    
+    clearDocumentSelect();
+    
+    // Show modal
+    if (credentialModal) {
+        credentialModal.classList.remove('hidden');
+        credentialModal.style.display = 'flex';
+    }
+}
+
+function closeModal() {
+    console.log('❌ Closing modal');
+    
+    if (credentialModal) {
+        credentialModal.classList.add('hidden');
+        credentialModal.style.display = 'none';
+    }
+}
+
+function clearDocumentSelect() {
+    if (docSelect) {
+        docSelect.innerHTML = '<option value="">-- Create New Document --</option>';
+    }
+}
+
+async function loadExistingDocuments(folder) {
+    console.log(`📄 Loading existing documents for folder: ${folder}`);
+    
+    if (!db || !auth.currentUser) {
+        console.error('❌ Database or authentication not ready');
+        return;
+    }
+
+    try {
+        const snapshot = await db.collection("credentials").doc(folder).collection("data").get();
+        
+        clearDocumentSelect();
+        
+        if (!snapshot.empty) {
+            snapshot.forEach(doc => {
+                const option = document.createElement('option');
+                option.value = doc.id;
+                option.textContent = doc.id;
+                docSelect.appendChild(option);
+            });
+            
+            console.log(`✅ Loaded ${snapshot.size} existing documents`);
+        } else {
+            console.log('📭 No existing documents found');
+        }
+        
+    } catch (error) {
+        console.error('❌ Error loading existing documents:', error);
+    }
+}
+
+async function handleFormSubmission(event) {
+    event.preventDefault();
+    console.log('📤 Form submission started');
+    
+    if (!auth.currentUser) {
+        alert('❌ Authentication required');
+        return;
+    }
+
+    // Get form values
+    const folder = folderSelect.value;
+    const selectedDoc = docSelect.value;
+    const newDocId = newDocIdInput.value.trim();
+    const key = document.getElementById('credKey').value.trim();
+    const value = document.getElementById('credValue').value.trim();
+
+    // Validation
+    if (!folder) {
+        alert('❌ Please select a category');
+        return;
+    }
+
+    if (!selectedDoc && !newDocId) {
+        alert('❌ Please select an existing document or enter a new document ID');
+        return;
+    }
+
+    if (!key || !value) {
+        alert('❌ Please enter both field key and value');
+        return;
+    }
+
+    // Determine document ID
+    const documentId = selectedDoc || newDocId;
+    
+    console.log('📝 Adding credential:', { folder, documentId, key, value });
+
+    try {
+        // Add to Firestore
+        const docRef = db.collection("credentials").doc(folder).collection("data").doc(documentId);
+        
+        // Check if document exists
+        const docSnapshot = await docRef.get();
+        
+        // Fixed: Use .exists as a property, not a method
+        if (docSnapshot.exists) {
+            // Update existing document
+            await docRef.update({
+                [key]: value
+            });
+            console.log('✅ Updated existing document');
+        } else {
+            // Create new document
+            await docRef.set({
+                [key]: value
+            });
+            console.log('✅ Created new document');
+        }
+
+        alert('✅ Credential added successfully!');
+        
+        // Close modal and refresh if the folder is currently displayed
+        closeModal();
+        
+        // Refresh the current view if it matches the added folder
+        const currentFolderHeader = document.querySelector('.table-header');
+        if (currentFolderHeader && currentFolderHeader.textContent.includes(folder)) {
+            fetchCredentials(folder);
+        }
+
+    } catch (error) {
+        console.error('❌ Error adding credential:', error);
+        alert('❌ Error adding credential: ' + error.message);
+    }
+}
+
 function handleUnauthenticatedUser() {
     console.log('🔍 Checking session storage authentication...');
-
+    
     const isAuthenticated = sessionStorage.getItem('isAuthenticated');
     const otpVerified = sessionStorage.getItem('otpVerified');
     const authTimestamp = sessionStorage.getItem('authTimestamp');
-
-    console.log('📋 Session storage state:', {
-        isAuthenticated,
-        otpVerified,
-        authTimestamp,
-        hasValidSession: isAuthenticated === 'true' && otpVerified === 'true'
-    });
-
+    
     if (isAuthenticated === 'true' && otpVerified === 'true') {
         // Check session expiry
         if (authTimestamp) {
             const currentTime = Date.now();
             const authTime = parseInt(authTimestamp);
             const sessionDuration = 24 * 60 * 60 * 1000; // 24 hours
-
+            
             if (currentTime - authTime > sessionDuration) {
                 console.log('⏰ Session expired');
                 clearSessionAndRedirect();
                 return;
             }
         }
-
+        
         console.log('🔑 Valid session found, signing into Firebase...');
         signInToFirebase();
     } else {
@@ -154,37 +323,27 @@ function clearSessionAndRedirect() {
 
 async function signInToFirebase() {
     console.log('🔐 Attempting Firebase sign-in...');
-
+    
     try {
-        // Check if already signed in
         if (currentUser) {
             console.log('✅ User already signed in');
             return;
         }
-
-        // Sign in anonymously to Firebase
+        
         const userCredential = await auth.signInAnonymously();
         console.log('✅ Successfully signed in to Firebase:', userCredential.user.uid);
-
-        // Verify the sign-in worked
-        const idToken = await userCredential.user.getIdToken();
-        console.log('🎫 ID Token obtained successfully (length):', idToken.length);
-
+        
     } catch (error) {
         console.error('❌ Firebase sign-in failed:', error);
-        console.error('❌ Error code:', error.code);
-        console.error('❌ Error message:', error.message);
-
-        // Specific error handling
+        
         if (error.code === 'auth/operation-not-allowed') {
-            alert('❌ Anonymous authentication is not enabled. Please enable it in Firebase Console.');
-        } else if (error.code === 'auth/web-storage-unsupported') {
-            alert('❌ Web storage is not supported in this browser.');
+            alert('❌ Anonymous authentication is not enabled in Firebase Console.');
+        } else if (error.code === 'auth/unauthorized-domain') {
+            alert('❌ Domain not authorized in Firebase. Please add your domain to Firebase authorized domains.');
         } else {
             alert('❌ Authentication failed: ' + error.message);
         }
-
-        // Don't redirect immediately, let user see the error
+        
         setTimeout(() => {
             window.location.href = 'index.html';
         }, 3000);
@@ -214,7 +373,7 @@ function addLogoutButton() {
 
         logoutBtn.addEventListener('click', async () => {
             console.log('🚪 Logging out...');
-
+            
             try {
                 if (auth.currentUser) {
                     await auth.signOut();
@@ -223,8 +382,7 @@ function addLogoutButton() {
             } catch (error) {
                 console.error('❌ Firebase sign-out error:', error);
             }
-
-            // Clear session storage
+            
             sessionStorage.removeItem('isAuthenticated');
             sessionStorage.removeItem('otpVerified');
             sessionStorage.removeItem('authTimestamp');
@@ -238,41 +396,25 @@ function addLogoutButton() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('📄 DOM Content Loaded');
     addLogoutButton();
 });
 
 async function fetchCredentials(folder) {
     console.log(`📂 Fetching credentials for folder: ${folder}`);
-
-    if (!db) {
-        console.error('❌ Database not initialized');
-        credentialsList.innerHTML = '<div class="error">❌ Database not initialized</div>';
-        return;
-    }
-
-    if (!auth.currentUser) {
-        console.error('❌ No authenticated user');
+    
+    if (!db || !auth.currentUser) {
         credentialsList.innerHTML = '<div class="error">❌ Authentication required</div>';
         return;
     }
 
-    console.log('👤 Current user:', auth.currentUser.uid);
     credentialsList.innerHTML = '<div class="loading">Loading credentials...</div>';
     credentialsList.classList.add('show');
 
     try {
-        console.log(`🔍 Querying collection: credentials/${folder}/data`);
-
-        // Test auth token before querying
-        const idToken = await auth.currentUser.getIdToken(true); // Force refresh
-        console.log('🎫 Fresh ID token obtained');
-
         const snapshot = await db.collection("credentials").doc(folder).collection("data").get();
 
-        console.log(`📊 Query result: ${snapshot.size} documents found`);
-
         if (snapshot.empty) {
-            console.log('📭 No documents found');
             credentialsList.innerHTML = `
                 <div class="credentials-table">
                     <div class="table-header">${folder} Credentials</div>
@@ -286,7 +428,6 @@ async function fetchCredentials(folder) {
             <table><thead><tr><th>Credential ID</th><th>Details</th></tr></thead><tbody>`;
 
         snapshot.forEach(doc => {
-            console.log(`📄 Processing document: ${doc.id}`);
             const data = doc.data();
             let details = Object.entries(data).map(([key, value]) => `
                 <div class="credential-item">
@@ -308,14 +449,10 @@ async function fetchCredentials(folder) {
         console.log('✅ Credentials displayed successfully');
 
     } catch (error) {
-        console.error('❌ Detailed error loading credentials:', {
-            code: error.code,
-            message: error.message,
-            stack: error.stack
-        });
-
+        console.error('❌ Error loading credentials:', error);
+        
         let errorMessage = '⚠️ Error loading credentials: ';
-
+        
         if (error.code === 'permission-denied') {
             errorMessage += 'Permission denied. Check Firebase rules and authentication.';
         } else if (error.code === 'unauthenticated') {
@@ -326,7 +463,7 @@ async function fetchCredentials(folder) {
         } else {
             errorMessage += error.message;
         }
-
+        
         credentialsList.innerHTML = `<div class="error">${errorMessage}</div>`;
     }
 }
@@ -340,13 +477,10 @@ async function changeCredential(folder, docId, key, currentValue) {
     const newValue = prompt(`✏️ Edit value for "${key}":`, currentValue);
     if (newValue !== null && newValue.trim() !== '') {
         try {
-            console.log(`✏️ Updating ${folder}/${docId}/${key}`);
-
             await db.collection("credentials").doc(folder).collection("data").doc(docId).update({
                 [key]: newValue.trim()
             });
-
-            console.log('✅ Update successful');
+            
             alert('✅ Value updated successfully');
             fetchCredentials(folder);
         } catch (error) {
@@ -382,28 +516,16 @@ async function copyToClipboard(text, button) {
 
 async function testDatabaseConnection() {
     console.log('🧪 Testing database connection...');
-
+    
     if (!auth.currentUser) {
         console.error('❌ No authenticated user for database test');
         return;
     }
 
     try {
-        console.log('🔍 Testing with simple query...');
         const testQuery = await db.collection('credentials').limit(1).get();
         console.log('✅ Database connection test successful');
-        console.log(`📊 Test query returned ${testQuery.size} documents`);
     } catch (error) {
-        console.error('❌ Database connection test failed:', {
-            code: error.code,
-            message: error.message
-        });
-
-        // Show user-friendly error
-        if (error.code === 'permission-denied') {
-            console.error('🚫 Permission denied - check Firebase rules');
-        } else if (error.code === 'unauthenticated') {
-            console.error('🔐 Unauthenticated - authentication issue');
-        }
+        console.error('❌ Database connection test failed:', error);
     }
 }
