@@ -1,6 +1,6 @@
 // firebase-config.js
 window.firebaseConfig = {
-  apiKey: "AIzaSyD3DZJ9O0rl2C249Mz9GNdS9lZB5LwuZcM",
+  apiKey: APIKEY,
   authDomain: "factorauth-2e140.firebaseapp.com",
   projectId: "factorauth-2e140",
   storageBucket: "factorauth-2e140.firebasestorage.app",
