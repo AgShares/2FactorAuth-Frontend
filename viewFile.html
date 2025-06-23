@@ -65,8 +65,8 @@
         <label for="newDocId">New Document ID:</label>
         <input type="text" id="newDocId" name="newDocId" placeholder="Enter new document ID" />
 
-        <!-- Step 3: Credential Type -->
-        <div class="credential-type">
+        <!-- Step 3: Credential Type (Hidden for Mails) -->
+        <div class="credential-type" id="credentialTypeSection">
           <label>
             <input type="radio" name="credentialType" value="newIp" checked> Add New IP
           </label>
@@ -75,14 +75,14 @@
           </label>
         </div>
 
-        <!-- Step 4: IP Field -->
+        <!-- Step 4: IP Field (Hidden for Mails) -->
         <div id="ipField" class="form-field">
           <label for="ipInput">IP Address:</label>
           <input type="text" id="ipInput" name="ipInput" placeholder="Enter IP address" />
         </div>
 
         <!-- Step 5: Username/Password Fields -->
-        <div id="userPassFields" class="form-field hidden">
+        <div id="userPassFields" class="form-field">
           <label for="usernameInput">Username:</label>
           <input type="text" id="usernameInput" name="usernameInput" placeholder="Enter username" />
           <label for="passwordInput">Password:</label>

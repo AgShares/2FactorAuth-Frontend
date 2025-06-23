@@ -455,11 +455,8 @@ tr.credential-row:hover {
   transform: translateY(-1px);
 }
 
-.form-field {
-  margin-bottom: 20px;
-}
-
-.form-field.hidden {
+.form-field.hidden,
+.credential-type.hidden {
   display: none;
 }
 
@@ -521,7 +518,7 @@ tr.credential-row:hover {
   transform: translateY(-2px);
 }
 
-th{
+th {
   display: none;
 }
 
@@ -625,6 +622,27 @@ th{
 
 .fade-in {
   animation: fadeIn 0.6s ease-out;
+}
+
+/* Replace the previous CSS addition with this */
+.form-field.hidden,
+.credential-type.hidden,
+#newDocId.hidden {
+  display: none;
+}
+
+/* Hide the label when newDocId is hidden */
+#newDocId.hidden ~ label[for="newDocId"],
+label[for="newDocId"] + #newDocId.hidden {
+  display: none;
+}
+
+/* Ensure the label for newDocId is styled correctly */
+label[for="newDocId"] {
+  display: block;
+  margin-bottom: 10px;
+  font-weight: 500;
+  color: #374151;
 }
 
 @keyframes fadeIn {

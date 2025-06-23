@@ -69,7 +69,6 @@ setTimeout(() => {
 function enableAppFunctionality() {
     console.log('✅ App functionality enabled');
     
-    // Add event listeners to folder buttons
     document.querySelectorAll(".folder-item").forEach((btn, index) => {
         btn.style.animationDelay = `${index * 0.1}s`;
         btn.classList.add('fade-in');
@@ -81,17 +80,14 @@ function enableAppFunctionality() {
         });
     });
 
-    // Enable modal functionality
     setupModalFunctionality();
     
-    // Test database connection
     setTimeout(testDatabaseConnection, 2000);
 }
 
 function setupModalFunctionality() {
     console.log('⚙️ Setting up modal functionality...');
     
-    // Add credential button click
     if (addCredentialBtn) {
         addCredentialBtn.addEventListener('click', () => {
             console.log('➕ Add credential button clicked');
@@ -101,7 +97,6 @@ function setupModalFunctionality() {
         console.error('❌ Add credential button not found');
     }
 
-    // Close modal button
     if (closeModalBtn) {
         closeModalBtn.addEventListener('click', () => {
             console.log('❌ Close modal button clicked');
@@ -109,7 +104,6 @@ function setupModalFunctionality() {
         });
     }
 
-    // Click outside modal to close
     if (credentialModal) {
         credentialModal.addEventListener('click', (e) => {
             if (e.target === credentialModal) {
@@ -118,42 +112,121 @@ function setupModalFunctionality() {
         });
     }
 
-    // Folder select change event
     if (folderSelect) {
         folderSelect.addEventListener('change', async () => {
             const selectedFolder = folderSelect.value;
             console.log('📂 Folder selected:', selectedFolder);
             
+            const credentialTypeSection = document.getElementById('credentialTypeSection');
+            const ipField = document.getElementById('ipField');
+            const userPassFields = document.getElementById('userPassFields');
+            const newDocIdInput = document.getElementById('newDocId');
+            const docSelect = document.getElementById('docSelect');
+
+            if (selectedFolder === 'Mails') {
+                credentialTypeSection.classList.add('hidden');
+                ipField.classList.add('hidden');
+                userPassFields.classList.remove('hidden');
+                newDocIdInput.disabled = false;
+            } else {
+                credentialTypeSection.classList.remove('hidden');
+                if (docSelect.value && docSelect.value !== '') {
+                    ipField.classList.add('hidden');
+                    userPassFields.classList.remove('hidden');
+                    document.querySelector('input[name="credentialType"][value="addUser"]').checked = true;
+                } else {
+                    ipField.classList.remove('hidden');
+                    userPassFields.classList.add('hidden');
+                    document.querySelector('input[name="credentialType"][value="newIp"]').checked = true;
+                }
+            }
+
             if (selectedFolder) {
                 await loadExistingDocuments(selectedFolder);
+                // Update visibility based on docSelect
+                if (docSelect.value && docSelect.value !== '') {
+                    newDocIdInput.classList.add('hidden');
+                    newDocIdInput.disabled = true;
+                    newDocIdInput.value = '';
+                    if (selectedFolder !== 'Mails') {
+                        ipField.classList.add('hidden');
+                        userPassFields.classList.remove('hidden');
+                        document.querySelector('input[name="credentialType"][value="addUser"]').checked = true;
+                    }
+                } else {
+                    newDocIdInput.classList.remove('hidden');
+                    newDocIdInput.disabled = false;
+                    if (selectedFolder !== 'Mails') {
+                        ipField.classList.remove('hidden');
+                        userPassFields.classList.add('hidden');
+                        document.querySelector('input[name="credentialType"][value="newIp"]').checked = true;
+                    }
+                }
             } else {
                 clearDocumentSelect();
+                newDocIdInput.classList.remove('hidden');
+                newDocIdInput.disabled = false;
+                if (selectedFolder !== 'Mails') {
+                    ipField.classList.remove('hidden');
+                    userPassFields.classList.add('hidden');
+                    document.querySelector('input[name="credentialType"][value="newIp"]').checked = true;
+                }
             }
         });
     }
 
-    // Credential type radio buttons
+    if (docSelect) {
+        docSelect.addEventListener('change', () => {
+            const newDocIdInput = document.getElementById('newDocId');
+            const ipField = document.getElementById('ipField');
+            const userPassFields = document.getElementById('userPassFields');
+            const credentialTypeSection = document.getElementById('credentialTypeSection');
+            const selectedFolder = folderSelect.value;
+
+            if (docSelect.value && docSelect.value !== '') {
+                newDocIdInput.classList.add('hidden');
+                newDocIdInput.disabled = true;
+                newDocIdInput.value = '';
+                if (selectedFolder !== 'Mails') {
+                    ipField.classList.add('hidden');
+                    userPassFields.classList.remove('hidden');
+                    document.querySelector('input[name="credentialType"][value="addUser"]').checked = true;
+                }
+            } else {
+                newDocIdInput.classList.remove('hidden');
+                newDocIdInput.disabled = false;
+                if (selectedFolder !== 'Mails') {
+                    ipField.classList.remove('hidden');
+                    userPassFields.classList.add('hidden');
+                    document.querySelector('input[name="credentialType"][value="newIp"]').checked = true;
+                }
+            }
+        });
+    }
+
     const credentialTypeRadios = document.querySelectorAll('input[name="credentialType"]');
     const ipField = document.getElementById('ipField');
     const userPassFields = document.getElementById('userPassFields');
+    const newDocIdInput = document.getElementById('newDocId');
 
     credentialTypeRadios.forEach(radio => {
         radio.addEventListener('change', () => {
             if (radio.value === 'newIp') {
                 ipField.classList.remove('hidden');
                 userPassFields.classList.add('hidden');
-                docSelect.value = ''; // Reset document selection for new IP
-                newDocIdInput.disabled = false; // Enable new document ID input
+                docSelect.value = '';
+                newDocIdInput.disabled = false;
+                newDocIdInput.classList.remove('hidden');
             } else {
                 ipField.classList.add('hidden');
                 userPassFields.classList.remove('hidden');
-                newDocIdInput.value = ''; // Clear new document ID
-                newDocIdInput.disabled = true; // Disable new document ID input
+                newDocIdInput.value = '';
+                newDocIdInput.disabled = true;
+                newDocIdInput.classList.add('hidden');
             }
         });
     });
 
-    // Form submission
     if (credentialForm) {
         credentialForm.addEventListener('submit', handleFormSubmission);
     }
@@ -169,25 +242,51 @@ function openModal() {
     
     console.log('📝 Opening add credential modal');
     
-    // Reset form
     if (credentialForm) {
         credentialForm.reset();
-        // Reset to new IP by default
-        document.querySelector('input[name="credentialType"][value="newIp"]').checked = true;
-        document.getElementById('ipField').classList.remove('hidden');
-        document.getElementById('userPassFields').classList.add('hidden');
-        newDocIdInput.disabled = false;
+        const credentialTypeSection = document.getElementById('credentialTypeSection');
+        const ipField = document.getElementById('ipField');
+        const userPassFields = document.getElementById('userPassFields');
+        const newDocIdInput = document.getElementById('newDocId');
+        const docSelect = document.getElementById('docSelect');
+
+        // Handle Mails folder-specific UI
+        if (folderSelect.value === 'Mails') {
+            credentialTypeSection.classList.add('hidden');
+            ipField.classList.add('hidden');
+            userPassFields.classList.remove('hidden');
+        } else {
+            credentialTypeSection.classList.remove('hidden');
+            // Hide IP field if an existing document is selected
+            if (docSelect.value && docSelect.value !== '') {
+                ipField.classList.add('hidden');
+                userPassFields.classList.remove('hidden');
+                document.querySelector('input[name="credentialType"][value="addUser"]').checked = true;
+            } else {
+                ipField.classList.remove('hidden');
+                userPassFields.classList.add('hidden');
+                document.querySelector('input[name="credentialType"][value="newIp"]').checked = true;
+            }
+        }
+
+        // Hide New Document ID field if an existing document is selected
+        if (docSelect.value && docSelect.value !== '') {
+            newDocIdInput.classList.add('hidden');
+            newDocIdInput.disabled = true;
+            newDocIdInput.value = ''; // Clear any existing value
+        } else {
+            newDocIdInput.classList.remove('hidden');
+            newDocIdInput.disabled = false;
+        }
     }
     
     clearDocumentSelect();
     
-    // Show modal
     if (credentialModal) {
         credentialModal.classList.remove('hidden');
         credentialModal.style.display = 'flex';
     }
 }
-
 function closeModal() {
     console.log('❌ Closing modal');
     
@@ -243,11 +342,10 @@ async function handleFormSubmission(event) {
         return;
     }
 
-    // Get form values
     const folder = folderSelect.value;
     const selectedDoc = docSelect.value;
     const newDocId = newDocIdInput.value.trim();
-    const credentialType = document.querySelector('input[name="credentialType"]:checked').value;
+    const credentialType = folder === 'Mails' ? 'addUser' : document.querySelector('input[name="credentialType"]:checked')?.value;
     const ip = document.getElementById('ipInput').value.trim();
     const username = document.getElementById('usernameInput').value.trim();
     const password = document.getElementById('passwordInput').value.trim();
@@ -263,66 +361,76 @@ async function handleFormSubmission(event) {
         return;
     }
 
-    if (credentialType === 'newIp' && !ip) {
+    if (folder !== 'Mails' && credentialType === 'newIp' && !ip) {
         alert('❌ Please enter an IP address');
         return;
     }
 
-    if (credentialType === 'addUser' && (!username || !password)) {
+    if (!username || !password) {
         alert('❌ Please enter both username and password');
         return;
     }
 
-    // Determine document ID
     const documentId = selectedDoc || newDocId;
     
     console.log('📝 Adding credential:', { folder, documentId, credentialType });
 
     try {
-        // Add to Firestore
         const docRef = db.collection("credentials").doc(folder).collection("data").doc(documentId);
-        
-        // Check if document exists
         const docSnapshot = await docRef.get();
         
-        if (credentialType === 'newIp') {
-            if (docSnapshot.exists) {
-                alert('❌ Document ID already exists. Please choose a different ID or select an existing document.');
-                return;
-            }
-            
-            // Create new document with IP
-            await docRef.set({
-                ip: ip
-            });
-            console.log('✅ Created new document with IP');
-        } else {
-            if (!docSnapshot.exists) {
-                alert('❌ Document does not exist. Please select an existing document or create a new IP first.');
-                return;
-            }
-
-            // Get existing data to determine next username/password index
-            const data = docSnapshot.data();
+        if (folder === 'Mails') {
             let nextIndex = 1;
-            while (data[`username${nextIndex}`]) {
-                nextIndex++;
+            if (docSnapshot.exists) {
+                const data = docSnapshot.data();
+                while (data[`username${nextIndex}`]) {
+                    nextIndex++;
+                }
+                await docRef.update({
+                    [`username${nextIndex}`]: username,
+                    [`password${nextIndex}`]: password
+                });
+                console.log(`✅ Added username${nextIndex} and password${nextIndex} to document`);
+            } else {
+                await docRef.set({
+                    [`username${nextIndex}`]: username,
+                    [`password${nextIndex}`]: password
+                });
+                console.log('✅ Created new document with username/password');
             }
-
-            // Update document with new username and password
-            await docRef.update({
-                [`username${nextIndex}`]: username,
-                [`password${nextIndex}`]: password
-            });
-            console.log(`✅ Added username${nextIndex} and password${nextIndex} to document`);
+        } else {
+            if (credentialType === 'newIp') {
+                if (docSnapshot.exists) {
+                    alert('❌ Document ID already exists. Please choose a different ID or select an existing document.');
+                    return;
+                }
+                await docRef.set({
+                    ip: ip,
+                    username1: username,
+                    password1: password
+                });
+                console.log('✅ Created new document with IP and username/password');
+            } else {
+                if (!docSnapshot.exists) {
+                    alert('❌ Document does not exist. Please select an existing document or create a new IP first.');
+                    return;
+                }
+                const data = docSnapshot.data();
+                let nextIndex = 1;
+                while (data[`username${nextIndex}`]) {
+                    nextIndex++;
+                }
+                await docRef.update({
+                    [`username${nextIndex}`]: username,
+                    [`password${nextIndex}`]: password
+                });
+                console.log(`✅ Added username${nextIndex} and password${nextIndex} to document`);
+            }
         }
 
         alert('✅ Credential added successfully!');
-        
-        // Close modal and refresh if the folder is currently displayed
         closeModal();
         
-        // Refresh the current view if it matches the added folder
         const currentFolderHeader = document.querySelector('.table-header');
         if (currentFolderHeader && currentFolderHeader.textContent.includes(folder)) {
             fetchCredentials(folder);
@@ -342,11 +450,10 @@ function handleUnauthenticatedUser() {
     const authTimestamp = sessionStorage.getItem('authTimestamp');
     
     if (isAuthenticated === 'true' && otpVerified === 'true') {
-        // Check session expiry
         if (authTimestamp) {
             const currentTime = Date.now();
             const authTime = parseInt(authTimestamp);
-            const sessionDuration = 24 * 60 * 60 * 1000; // 24 hours
+            const sessionDuration = 24 * 60 * 60 * 1000;
             
             if (currentTime - authTime > sessionDuration) {
                 console.log('⏰ Session expired');
@@ -365,7 +472,7 @@ function handleUnauthenticatedUser() {
 
 function clearSessionAndRedirect() {
     sessionStorage.removeItem('isAuthenticated');
-    sessionStorage.removeItem('otpVerified');
+    sessionStorage.removeModal('otpVerified');
     sessionStorage.removeItem('authTimestamp');
     alert('⚠️ Access Denied: Please login first');
     window.location.href = 'index.html';
@@ -457,7 +564,6 @@ function toggleCredentialDetails(docId) {
     
     if (!detailRow) return;
 
-    // If clicking the already open row, close it
     if (currentlyOpenDetail === docId) {
         detailRow.classList.remove('active');
         currentlyOpenDetail = null;
@@ -465,7 +571,6 @@ function toggleCredentialDetails(docId) {
         return;
     }
 
-    // Close the previously open row, if any
     if (currentlyOpenDetail) {
         const previousDetailRow = document.getElementById(`details-${currentlyOpenDetail}`);
         if (previousDetailRow) {
@@ -474,7 +579,6 @@ function toggleCredentialDetails(docId) {
         }
     }
 
-    // Open the clicked row
     detailRow.classList.add('active');
     currentlyOpenDetail = docId;
     console.log(`✅ Opened details for credential: ${docId}`);
@@ -509,9 +613,7 @@ async function fetchCredentials(folder) {
 
         snapshot.forEach(doc => {
             const data = doc.data();
-            // Extract IP if it exists, otherwise set to empty
-            const ip = data.ip || data.IP || '';
-            // Filter and collect username and password pairs
+            const ip = folder !== 'Mails' && (data.ip || data.IP || '');
             const credentials = [];
             Object.entries(data).forEach(([key, value]) => {
                 if (key.toLowerCase().startsWith('username')) {
@@ -524,9 +626,8 @@ async function fetchCredentials(folder) {
                 }
             });
 
-            // Start building details HTML with IP first (if available)
             let details = '';
-            if (ip) {
+            if (folder !== 'Mails' && ip) {
                 details += `
                     <div class="credential-item">
                         <div class="credential-content">
@@ -540,7 +641,6 @@ async function fetchCredentials(folder) {
                     </div>`;
             }
 
-            // Add username and password pairs
             credentials.forEach(({ usernameKey, username, password }) => {
                 details += `
                     <div class="credential-item">
