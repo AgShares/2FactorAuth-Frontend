@@ -127,6 +127,27 @@
     </div>
   </div>
 
+  <!-- Toggle Button -->
+  <button id="togglePanelBtn" class="toggle-panel-btn" onclick="hidePanels()">❌</button>
+  <div id="showPanelsIcon" class="show-panels-icon" onclick="showPanels()" style="display: none;">👁 Show Panels</div>
+
+  <script>
+    function hidePanels() {
+      document.getElementById('userStatus').style.display = 'none';
+      document.querySelector('.right-panel').style.display = 'none';
+      document.getElementById('togglePanelBtn').style.display = 'none';
+      document.getElementById('showPanelsIcon').style.display = 'block';
+    }
+
+    function showPanels() {
+      document.getElementById('userStatus').style.display = 'block';
+      document.querySelector('.right-panel').style.display = 'block';
+      document.getElementById('togglePanelBtn').style.display = 'block';
+      document.getElementById('showPanelsIcon').style.display = 'none';
+    }
+  </script>
+
+
   <!-- Firebase Scripts -->
   <!-- 1. Firebase Core -->
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>

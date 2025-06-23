@@ -604,8 +604,8 @@ th {
   }
 
   #viewFileLogoutBtn {
-    top: -50px;
-    right: -4px;
+    top: -61px !important;
+    right: -10px !important;
     padding: 5px 10px;
     font-size: 12px;
     width: 80px;
@@ -787,4 +787,35 @@ label[for="newDocId"] {
 
 .login-history-list li .login-time {
   color: #a0aec0;
+}
+
+/* Toggle button (❌) */
+.toggle-panel-btn {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background-color: #7f2121;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  z-index: 1100;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Show icon (👁) */
+.show-panels-icon {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  z-index: 1100;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
