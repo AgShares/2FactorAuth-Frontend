@@ -521,6 +521,10 @@ tr.credential-row:hover {
   transform: translateY(-2px);
 }
 
+th{
+  display: none;
+}
+
 @media (max-width: 768px) {
   .container {
     margin: 10px;
