@@ -12,32 +12,64 @@
   <!-- Authentication check script - MUST be first -->
   <script src="auth-check.js"></script>
 
+  <div id="userStatus" class="user-status loading">
+    <div class="user-status-line">
+      <span class="user-status-label">
+        <span class="status-indicator loading"></span>Status:
+      </span>
+      <span class="user-status-value">Connecting...</span>
+    </div>
+    <div class="user-status-line">
+      <span class="user-status-label">User:</span>
+      <span class="user-status-value" id="currentUser">Loading...</span>
+    </div>
+    <div class="user-status-line">
+      <span class="user-status-label">Login:</span>
+      <span class="user-status-value" id="loginTime">--:--</span>
+    </div>
+    <div class="user-status-line">
+      <span class="user-status-label">Session:</span>
+      <span class="user-status-value" id="sessionDuration">00:00:00</span>
+    </div>
+  </div>
+
+  <div class="right-panel">
+    <div class="login-history">
+      <h2>📜 Login History</h2>
+      <ul id="loginHistoryList" class="login-history-list"></ul>
+    </div>
+  </div>
+
   <div class="container fade-in">
-    <div class="header" style="position: relative;">
-      <h1>🔐 Credential Vault</h1>
-      <p>Secure access to your infrastructure credentials</p>
-    </div>
+    <div class="main-content">
+      <div class="left-panel">
+        <div class="header" style="position: relative;">
+          <h1>🔐 Credential Vault</h1>
+          <p>Secure access to your infrastructure credentials</p>
+        </div>
 
-    <div class="folder-grid">
-      <div class="folder-item" data-folder="Server">
-        <span class="folder-icon">🖥️</span>
-        Server Credentials
-      </div>
-      <div class="folder-item" data-folder="Firewall">
-        <span class="folder-icon">🛡️</span>
-        Firewall Access
-      </div>
-      <div class="folder-item" data-folder="Switch">
-        <span class="folder-icon">🔗</span>
-        Network Switch
-      </div>
-      <div class="folder-item" data-folder="Mails">
-        <span class="folder-icon">✉️</span>
-        Mails
+        <div class="folder-grid">
+          <div class="folder-item" data-folder="Server">
+            <span class="folder-icon">🖥️</span>
+            Server Credentials
+          </div>
+          <div class="folder-item" data-folder="Firewall">
+            <span class="folder-icon">🛡️</span>
+            Firewall Access
+          </div>
+          <div class="folder-item" data-folder="Switch">
+            <span class="folder-icon">🔗</span>
+            Network Switch
+          </div>
+          <div class="folder-item" data-folder="Mails">
+            <span class="folder-icon">✉️</span>
+            Mails
+          </div>
+        </div>
+
+        <div id="credentialsList"></div>
       </div>
     </div>
-
-    <div id="credentialsList"></div>
   </div>
 
   <button id="addCredentialBtn" class="floating-btn">➕</button>

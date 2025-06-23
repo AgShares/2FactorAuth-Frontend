@@ -39,9 +39,12 @@ body {
 }
 
 @keyframes shimmer {
-  0%, 100% {
+
+  0%,
+  100% {
     background-position: 0% 50%;
   }
+
   50% {
     background-position: 100% 50%;
   }
@@ -283,9 +286,17 @@ tr.credential-row:hover {
 }
 
 @keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.05);
+  }
+
+  100% {
+    transform: scale(1);
+  }
 }
 
 .edit-btn {
@@ -405,7 +416,7 @@ tr.credential-row:hover {
 
 .modal-content select,
 .modal-content input[type="text"],
-.modal-content input[type="radio"] + label {
+.modal-content input[type="radio"]+label {
   width: 100%;
   padding: 16px 20px;
   border: 2px solid #e5e7eb;
@@ -542,7 +553,8 @@ th {
     padding: 25px;
   }
 
-  th, td {
+  th,
+  td {
     padding: 15px 10px;
     font-size: 0.9rem;
   }
@@ -599,7 +611,8 @@ th {
     width: 80px;
   }
 
-  .copy-btn, .edit-btn {
+  .copy-btn,
+  .edit-btn {
     font-size: 0.65rem;
     padding: 3px 6px;
   }
@@ -632,8 +645,8 @@ th {
 }
 
 /* Hide the label when newDocId is hidden */
-#newDocId.hidden ~ label[for="newDocId"],
-label[for="newDocId"] + #newDocId.hidden {
+#newDocId.hidden~label[for="newDocId"],
+label[for="newDocId"]+#newDocId.hidden {
   display: none;
 }
 
@@ -647,8 +660,131 @@ label[for="newDocId"] {
     opacity: 0;
     transform: translateY(30px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+
+/* User Status Styles */
+.user-status {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 15px;
+  border-radius: 8px;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  z-index: 1000;
+  min-width: 200px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.user-status-line {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 5px;
+}
+
+.user-status-line:last-child {
+  margin-bottom: 0;
+}
+
+.user-status-label {
+  display: flex;
+  align-items: center;
+  font-weight: bold;
+  margin-right: 10px;
+}
+
+.status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 5px;
+  display: inline-block;
+}
+
+.status-indicator.loading {
+  background: orange;
+  animation: pulse 1.5s ease-in-out infinite alternate;
+}
+
+.status-indicator.connected {
+  background: #28a745;
+}
+
+.status-indicator.error {
+  background: #dc3545;
+}
+
+@keyframes pulse {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0.5;
+  }
+}
+
+.user-status-value {
+  color: #00ff88;
+  font-weight: normal;
+}
+
+.login-history {
+  position: fixed;
+  top: 150px;
+  left: 20px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 15px;
+  border-radius: 8px;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  z-index: 1000;
+  max-width: 270px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.login-history h2 {
+  font-size: 1.3rem;
+  color: #60a5fa;
+  margin-bottom: 15px;
+}
+
+.login-history-list {
+  list-style: none;
+  padding: 0;
+  max-height: 600px;
+  overflow-y: scroll;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.login-history-list li {
+  background: #2d3748;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.login-history-list li .login-email {
+  color: #e2e8f0;
+  max-width: 50%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.login-history-list li .login-time {
+  color: #a0aec0;
 }
