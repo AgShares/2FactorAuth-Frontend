@@ -132,6 +132,27 @@ function setupModalFunctionality() {
         });
     }
 
+    // Credential type radio buttons
+    const credentialTypeRadios = document.querySelectorAll('input[name="credentialType"]');
+    const ipField = document.getElementById('ipField');
+    const userPassFields = document.getElementById('userPassFields');
+
+    credentialTypeRadios.forEach(radio => {
+        radio.addEventListener('change', () => {
+            if (radio.value === 'newIp') {
+                ipField.classList.remove('hidden');
+                userPassFields.classList.add('hidden');
+                docSelect.value = ''; // Reset document selection for new IP
+                newDocIdInput.disabled = false; // Enable new document ID input
+            } else {
+                ipField.classList.add('hidden');
+                userPassFields.classList.remove('hidden');
+                newDocIdInput.value = ''; // Clear new document ID
+                newDocIdInput.disabled = true; // Disable new document ID input
+            }
+        });
+    });
+
     // Form submission
     if (credentialForm) {
         credentialForm.addEventListener('submit', handleFormSubmission);
@@ -151,6 +172,11 @@ function openModal() {
     // Reset form
     if (credentialForm) {
         credentialForm.reset();
+        // Reset to new IP by default
+        document.querySelector('input[name="credentialType"][value="newIp"]').checked = true;
+        document.getElementById('ipField').classList.remove('hidden');
+        document.getElementById('userPassFields').classList.add('hidden');
+        newDocIdInput.disabled = false;
     }
     
     clearDocumentSelect();
@@ -221,8 +247,10 @@ async function handleFormSubmission(event) {
     const folder = folderSelect.value;
     const selectedDoc = docSelect.value;
     const newDocId = newDocIdInput.value.trim();
-    const key = document.getElementById('credKey').value.trim();
-    const value = document.getElementById('credValue').value.trim();
+    const credentialType = document.querySelector('input[name="credentialType"]:checked').value;
+    const ip = document.getElementById('ipInput').value.trim();
+    const username = document.getElementById('usernameInput').value.trim();
+    const password = document.getElementById('passwordInput').value.trim();
 
     // Validation
     if (!folder) {
@@ -235,15 +263,20 @@ async function handleFormSubmission(event) {
         return;
     }
 
-    if (!key || !value) {
-        alert('❌ Please enter both field key and value');
+    if (credentialType === 'newIp' && !ip) {
+        alert('❌ Please enter an IP address');
+        return;
+    }
+
+    if (credentialType === 'addUser' && (!username || !password)) {
+        alert('❌ Please enter both username and password');
         return;
     }
 
     // Determine document ID
     const documentId = selectedDoc || newDocId;
     
-    console.log('📝 Adding credential:', { folder, documentId, key, value });
+    console.log('📝 Adding credential:', { folder, documentId, credentialType });
 
     try {
         // Add to Firestore
@@ -252,18 +285,36 @@ async function handleFormSubmission(event) {
         // Check if document exists
         const docSnapshot = await docRef.get();
         
-        if (docSnapshot.exists) {
-            // Update existing document
-            await docRef.update({
-                [key]: value
-            });
-            console.log('✅ Updated existing document');
-        } else {
-            // Create new document
+        if (credentialType === 'newIp') {
+            if (docSnapshot.exists) {
+                alert('❌ Document ID already exists. Please choose a different ID or select an existing document.');
+                return;
+            }
+            
+            // Create new document with IP
             await docRef.set({
-                [key]: value
+                ip: ip
             });
-            console.log('✅ Created new document');
+            console.log('✅ Created new document with IP');
+        } else {
+            if (!docSnapshot.exists) {
+                alert('❌ Document does not exist. Please select an existing document or create a new IP first.');
+                return;
+            }
+
+            // Get existing data to determine next username/password index
+            const data = docSnapshot.data();
+            let nextIndex = 1;
+            while (data[`username${nextIndex}`]) {
+                nextIndex++;
+            }
+
+            // Update document with new username and password
+            await docRef.update({
+                [`username${nextIndex}`]: username,
+                [`password${nextIndex}`]: password
+            });
+            console.log(`✅ Added username${nextIndex} and password${nextIndex} to document`);
         }
 
         alert('✅ Credential added successfully!');
@@ -458,17 +509,61 @@ async function fetchCredentials(folder) {
 
         snapshot.forEach(doc => {
             const data = doc.data();
-            let details = Object.entries(data).map(([key, value]) => `
-                <div class="credential-item">
-                    <div class="credential-content">
-                        <span class="credential-key">${key}:</span>
-                        <span class="credential-value">${value}</span>
+            // Extract IP if it exists, otherwise set to empty
+            const ip = data.ip || data.IP || '';
+            // Filter and collect username and password pairs
+            const credentials = [];
+            Object.entries(data).forEach(([key, value]) => {
+                if (key.toLowerCase().startsWith('username')) {
+                    const index = key.match(/\d+/) ? key.match(/\d+/)[0] : '';
+                    const passwordKey = index ? `password${index}` : 'password';
+                    const password = data[passwordKey] || '';
+                    if (password) {
+                        credentials.push({ usernameKey: key, username: value, password });
+                    }
+                }
+            });
+
+            // Start building details HTML with IP first (if available)
+            let details = '';
+            if (ip) {
+                details += `
+                    <div class="credential-item">
+                        <div class="credential-content">
+                            <span class="credential-key">IP:</span>
+                            <span class="credential-value">${ip}</span>
+                        </div>
+                        <div class="credential-actions">
+                            <button class="copy-btn" onclick="copyToClipboard('${ip.toString().replace(/'/g, "\\'")}', this)">📋 COPY</button>
+                            <button class="edit-btn" onclick="changeCredential('${folder}', '${doc.id}', 'ip', '${ip.toString().replace(/'/g, "\\'")}')">✏️ EDIT</button>
+                        </div>
+                    </div>`;
+            }
+
+            // Add username and password pairs
+            credentials.forEach(({ usernameKey, username, password }) => {
+                details += `
+                    <div class="credential-item">
+                        <div class="credential-content">
+                            <span class="credential-key">Username:</span>
+                            <span class="credential-value">${username}</span>
+                        </div>
+                        <div class="credential-actions">
+                            <button class="copy-btn" onclick="copyToClipboard('${username.toString().replace(/'/g, "\\'")}', this)">📋 COPY</button>
+                            <button class="edit-btn" onclick="changeCredential('${folder}', '${doc.id}', '${usernameKey}', '${username.toString().replace(/'/g, "\\'")}')">✏️ EDIT</button>
+                        </div>
                     </div>
-                    <div class="credential-actions">
-                        <button class="copy-btn" onclick="copyToClipboard('${value.toString().replace(/'/g, "\\'")}', this)">📋 COPY</button>
-                        <button class="edit-btn" onclick="changeCredential('${folder}', '${doc.id}', '${key}', '${value.toString().replace(/'/g, "\\'")}')">✏️ EDIT</button>
-                    </div>
-                </div>`).join('');
+                    <div class="credential-item">
+                        <div class="credential-content">
+                            <span class="credential-key">Password:</span>
+                            <span class="credential-value">${password}</span>
+                        </div>
+                        <div class="credential-actions">
+                            <button class="copy-btn" onclick="copyToClipboard('${password.toString().replace(/'/g, "\\'")}', this)">📋 COPY</button>
+                            <button class="edit-btn" onclick="changeCredential('${folder}', '${doc.id}', '${usernameKey.replace('username', 'password')}', '${password.toString().replace(/'/g, "\\'")}')">✏️ EDIT</button>
+                        </div>
+                    </div>`;
+            });
 
             tableHTML += `
                 <tr class="credential-row" onclick="toggleCredentialDetails('${doc.id}')">

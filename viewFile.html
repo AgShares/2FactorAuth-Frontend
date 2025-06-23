@@ -35,7 +35,6 @@
         <span class="folder-icon">✉️</span>
         Mails
       </div>
-
     </div>
 
     <div id="credentialsList"></div>
@@ -49,8 +48,8 @@
       <h2>Add New Data to Database</h2>
       <form id="credentialForm">
         <!-- Step 1: Choose Folder -->
-        <label>Select Category:</label>
-        <select id="folderSelect" required>
+        <label for="folderSelect">Select Category:</label>
+        <select id="folderSelect" name="folder" required>
           <option value="">-- Select Folder --</option>
           <option value="Server">Server</option>
           <option value="Firewall">Firewall</option>
@@ -59,34 +58,53 @@
         </select>
 
         <!-- Step 2: Choose or Create Document -->
-        <label>Select Document (or type new):</label>
-        <select id="docSelect">
+        <label for="docSelect">Select Document:</label>
+        <select id="docSelect" name="doc">
           <option value="">-- Create New Document --</option>
         </select>
-        <input type="text" id="newDocId" placeholder="New Document ID (if not selected)" />
+        <label for="newDocId">New Document ID:</label>
+        <input type="text" id="newDocId" name="newDocId" placeholder="Enter new document ID" />
 
-        <!-- Step 3: Key-Value -->
-        <label>Field Key:</label>
-        <input type="text" id="credKey" required />
+        <!-- Step 3: Credential Type -->
+        <div class="credential-type">
+          <label>
+            <input type="radio" name="credentialType" value="newIp" checked> Add New IP
+          </label>
+          <label>
+            <input type="radio" name="credentialType" value="addUser"> Add Username/Password to Existing IP
+          </label>
+        </div>
 
-        <label>Field Value:</label>
-        <input type="text" id="credValue" required />
+        <!-- Step 4: IP Field -->
+        <div id="ipField" class="form-field">
+          <label for="ipInput">IP Address:</label>
+          <input type="text" id="ipInput" name="ipInput" placeholder="Enter IP address" />
+        </div>
 
-        <button type="submit" class="btn">➕ Add Field</button>
+        <!-- Step 5: Username/Password Fields -->
+        <div id="userPassFields" class="form-field hidden">
+          <label for="usernameInput">Username:</label>
+          <input type="text" id="usernameInput" name="usernameInput" placeholder="Enter username" />
+          <label for="passwordInput">Password:</label>
+          <input type="text" id="passwordInput" name="passwordInput" placeholder="Enter password" />
+        </div>
+
+        <button type="submit" class="btn">➕ Add Credential</button>
         <button type="button" id="closeModalBtn" class="btn cancel">Cancel</button>
       </form>
     </div>
   </div>
 
+  <!-- Firebase Scripts -->
   <!-- 1. Firebase Core -->
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <!-- 2. Firestore -->
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-  <!-- 3. Auth (if using) -->
+  <!-- 3. Auth -->
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-  <!-- 4. Your config -->
+  <!-- 4. Firebase Config -->
   <script src="index.js"></script>
-  <!-- 5. Your app scripts -->
+  <!-- 5. Application Logic -->
   <script src="viewFile.js"></script>
 </body>
 
