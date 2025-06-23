@@ -107,13 +107,19 @@
           </label>
         </div>
 
-        <!-- Step 4: IP Field (Hidden for Mails) -->
+        <!-- Step 4: URL Field (Visible only for Mails, disabled for existing documents) -->
+        <div id="urlField" class="form-field hidden">
+          <label for="urlInput">URL:</label>
+          <input type="url" id="urlInput" name="urlInput" placeholder="Enter URL (e.g., https://example.com)" />
+        </div>
+
+        <!-- Step 5: IP Field (Hidden for Mails) -->
         <div id="ipField" class="form-field">
           <label for="ipInput">IP Address:</label>
           <input type="text" id="ipInput" name="ipInput" placeholder="Enter IP address" />
         </div>
 
-        <!-- Step 5: Username/Password Fields -->
+        <!-- Step 6: Username/Password Fields -->
         <div id="userPassFields" class="form-field">
           <label for="usernameInput">Username:</label>
           <input type="text" id="usernameInput" name="usernameInput" placeholder="Enter username" />

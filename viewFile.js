@@ -241,6 +241,7 @@ function setupModalFunctionality() {
 
             const credentialTypeSection = document.getElementById('credentialTypeSection');
             const ipField = document.getElementById('ipField');
+            const urlField = document.getElementById('urlField');
             const userPassFields = document.getElementById('userPassFields');
             const newDocIdInput = document.getElementById('newDocId');
             const newDocIdLabel = document.querySelector('label[for="newDocId"]');
@@ -248,12 +249,15 @@ function setupModalFunctionality() {
             if (selectedFolder === 'Mails') {
                 credentialTypeSection.classList.add('hidden');
                 ipField.classList.add('hidden');
+                urlField.classList.remove('hidden');
                 userPassFields.classList.remove('hidden');
                 newDocIdInput.classList.remove('hidden');
                 newDocIdLabel.style.display = 'block';
                 newDocIdInput.disabled = false;
+                urlField.querySelector('input').disabled = false;
             } else {
                 credentialTypeSection.classList.remove('hidden');
+                urlField.classList.add('hidden');
                 if (docSelect.value && docSelect.value !== '') {
                     ipField.classList.add('hidden');
                     userPassFields.classList.remove('hidden');
@@ -279,6 +283,7 @@ function setupModalFunctionality() {
                 newDocIdInput.classList.remove('hidden');
                 newDocIdLabel.style.display = 'block';
                 newDocIdInput.disabled = false;
+                urlField.classList.add('hidden');
                 if (selectedFolder !== 'Mails') {
                     ipField.classList.remove('hidden');
                     userPassFields.classList.add('hidden');
@@ -289,10 +294,11 @@ function setupModalFunctionality() {
     }
 
     if (docSelect) {
-        docSelect.addEventListener('change', () => {
+        docSelect.addEventListener('change', async () => {
             const newDocIdInput = document.getElementById('newDocId');
             const newDocIdLabel = document.querySelector('label[for="newDocId"]');
             const ipField = document.getElementById('ipField');
+            const urlField = document.getElementById('urlField');
             const userPassFields = document.getElementById('userPassFields');
             const selectedFolder = folderSelect.value;
 
@@ -305,6 +311,20 @@ function setupModalFunctionality() {
                     ipField.classList.add('hidden');
                     userPassFields.classList.remove('hidden');
                     document.querySelector('input[name="credentialType"][value="addUser"]').checked = true;
+                } else {
+                    // For Mails, disable URL field if document exists
+                    urlField.classList.remove('hidden');
+                    userPassFields.classList.remove('hidden');
+                    const docRef = db.collection("credentials").doc(selectedFolder).collection("data").doc(docSelect.value);
+                    const docSnapshot = await docRef.get();
+                    const urlInput = urlField.querySelector('input');
+                    if (docSnapshot.exists && docSnapshot.data().url) {
+                        urlInput.value = docSnapshot.data().url;
+                        urlInput.disabled = true;
+                    } else {
+                        urlInput.value = '';
+                        urlInput.disabled = false;
+                    }
                 }
             } else {
                 newDocIdInput.classList.remove('hidden');
@@ -314,6 +334,11 @@ function setupModalFunctionality() {
                     ipField.classList.remove('hidden');
                     userPassFields.classList.add('hidden');
                     document.querySelector('input[name="credentialType"][value="newIp"]').checked = true;
+                    urlField.classList.add('hidden');
+                } else {
+                    urlField.classList.remove('hidden');
+                    userPassFields.classList.remove('hidden');
+                    urlField.querySelector('input').disabled = false;
                 }
             }
         });
@@ -321,6 +346,7 @@ function setupModalFunctionality() {
 
     const credentialTypeRadios = document.querySelectorAll('input[name="credentialType"]');
     const ipField = document.getElementById('ipField');
+    const urlField = document.getElementById('urlField');
     const userPassFields = document.getElementById('userPassFields');
     const newDocIdInput = document.getElementById('newDocId');
     const newDocIdLabel = document.querySelector('label[for="newDocId"]');
@@ -330,6 +356,7 @@ function setupModalFunctionality() {
             if (radio.value === 'newIp') {
                 ipField.classList.remove('hidden');
                 userPassFields.classList.add('hidden');
+                urlField.classList.add('hidden');
                 docSelect.value = '';
                 newDocIdInput.disabled = false;
                 newDocIdInput.classList.remove('hidden');
@@ -337,6 +364,7 @@ function setupModalFunctionality() {
             } else {
                 ipField.classList.add('hidden');
                 userPassFields.classList.remove('hidden');
+                urlField.classList.add('hidden');
                 newDocIdInput.value = '';
                 newDocIdInput.disabled = true;
                 newDocIdInput.classList.add('hidden');
@@ -365,6 +393,7 @@ function openModal() {
         credentialForm.reset();
         const credentialTypeSection = document.getElementById('credentialTypeSection');
         const ipField = document.getElementById('ipField');
+        const urlField = document.getElementById('urlField');
         const userPassFields = document.getElementById('userPassFields');
         const newDocIdInput = document.getElementById('newDocId');
         const newDocIdLabel = document.querySelector('label[for="newDocId"]');
@@ -372,12 +401,15 @@ function openModal() {
         if (folderSelect.value === 'Mails') {
             credentialTypeSection.classList.add('hidden');
             ipField.classList.add('hidden');
+            urlField.classList.remove('hidden');
             userPassFields.classList.remove('hidden');
             newDocIdInput.classList.remove('hidden');
             newDocIdLabel.style.display = 'block';
             newDocIdInput.disabled = false;
+            urlField.querySelector('input').disabled = false;
         } else {
             credentialTypeSection.classList.remove('hidden');
+            urlField.classList.add('hidden');
             if (currentDocValue && currentDocValue !== '') {
                 ipField.classList.add('hidden');
                 userPassFields.classList.remove('hidden');
@@ -465,6 +497,7 @@ async function handleFormSubmission(event) {
     const newDocId = newDocIdInput.value.trim();
     const credentialType = folder === 'Mails' ? 'addUser' : document.querySelector('input[name="credentialType"]:checked')?.value;
     const ip = document.getElementById('ipInput').value.trim();
+    const url = document.getElementById('urlInput').value.trim();
     const username = document.getElementById('usernameInput').value.trim();
     const password = document.getElementById('passwordInput').value.trim();
 
@@ -484,6 +517,11 @@ async function handleFormSubmission(event) {
         return;
     }
 
+    if (folder === 'Mails' && !selectedDoc && !url) {
+        alert('❌ Please enter a URL for Mails');
+        return;
+    }
+
     if (!username || !password) {
         alert('❌ Please enter both username and password');
         return;
@@ -491,7 +529,7 @@ async function handleFormSubmission(event) {
 
     const documentId = selectedDoc || newDocId;
 
-    console.log('📝 Adding credential:', { folder, documentId, credentialType });
+    console.log('📝 Adding credential:', { folder, documentId, credentialType, url });
 
     try {
         const docRef = db.collection("credentials").doc(folder).collection("data").doc(documentId);
@@ -511,10 +549,11 @@ async function handleFormSubmission(event) {
                 console.log(`✅ Added username${nextIndex} and password${nextIndex} to document`);
             } else {
                 await docRef.set({
+                    url: url,
                     [`username${nextIndex}`]: username,
                     [`password${nextIndex}`]: password
                 });
-                console.log('✅ Created new document with username/password');
+                console.log('✅ Created new Mails document with URL and username/password');
             }
         } else {
             if (credentialType === 'newIp') {
@@ -728,6 +767,7 @@ async function fetchCredentials(folder) {
         snapshot.forEach(doc => {
             const data = doc.data();
             const ip = folder !== 'Mails' && (data.ip || data.IP || '');
+            const url = folder === 'Mails' && (data.url || '');
             const credentials = [];
             Object.entries(data).forEach(([key, value]) => {
                 if (key.toLowerCase().startsWith('username')) {
@@ -751,6 +791,18 @@ async function fetchCredentials(folder) {
                         <div class="credential-actions">
                             <button class="copy-btn" onclick="copyToClipboard('${ip.replace(/'/g, "\\'")}', this)">📋 COPY</button>
                             <button class="edit-btn" onclick="changeCredential('${folder}', '${doc.id}', 'ip', '${ip.replace(/'/g, "\\'")}')">✏️ EDIT</button>
+                        </div>
+                    </div>`;
+            } else if (folder === 'Mails' && url) {
+                details += `
+                    <div class="credential-item">
+                        <div class="credential-content">
+                            <span class="credential-key">URL:</span>
+                            <span class="credential-value">${url}</span>
+                        </div>
+                        <div class="credential-actions">
+                            <button class="copy-btn" onclick="copyToClipboard('${url.replace(/'/g, "\\'")}', this)">📋 COPY</button>
+                            <button class="edit-btn" onclick="changeCredential('${folder}', '${doc.id}', 'url', '${url.replace(/'/g, "\\'")}')">✏️ EDIT</button>
                         </div>
                     </div>`;
             }
