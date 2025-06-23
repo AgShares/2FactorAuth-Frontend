@@ -639,10 +639,7 @@ label[for="newDocId"] + #newDocId.hidden {
 
 /* Ensure the label for newDocId is styled correctly */
 label[for="newDocId"] {
-  display: block;
-  margin-bottom: 10px;
-  font-weight: 500;
-  color: #374151;
+  display: none;
 }
 
 @keyframes fadeIn {
