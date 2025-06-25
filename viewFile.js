@@ -517,10 +517,7 @@ async function handleFormSubmission(event) {
         return;
     }
 
-    if (folder === 'Mails' && !selectedDoc && !url) {
-        alert('❌ Please enter a URL for Mails');
-        return;
-    }
+    // URL is now optional for Mails - removed validation
 
     if (!username || !password) {
         alert('❌ Please enter both username and password');
@@ -548,12 +545,16 @@ async function handleFormSubmission(event) {
                 });
                 console.log(`✅ Added username${nextIndex} and password${nextIndex} to document`);
             } else {
-                await docRef.set({
-                    url: url,
+                const docData = {
                     [`username${nextIndex}`]: username,
                     [`password${nextIndex}`]: password
-                });
-                console.log('✅ Created new Mails document with URL and username/password');
+                };
+                // Only add URL if it's provided
+                if (url) {
+                    docData.url = url;
+                }
+                await docRef.set(docData);
+                console.log('✅ Created new Mails document with username/password' + (url ? ' and URL' : ''));
             }
         } else {
             if (credentialType === 'newIp') {
